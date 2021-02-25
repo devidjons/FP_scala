@@ -47,5 +47,19 @@ object List {
   def concat[A](l:List[List[A]]):List[A]={
     reverse(foldLeft(l, Nil:List[A])((acc,el)=>foldLeft(el, acc)((acc1, el1)=>Cons(el1,acc1))))
   }
+  def startsWith[A](l:List[A], start_l:List[A]):Boolean={
+    (l, start_l) match{
+      case (_, Nil) => true
+      case (Nil,Cons(h,t))=> false
+      case (Cons(h1,t1), Cons(h2,t2))=>if (h1!=h2) false else startsWith(t1,t2)
+    }
+  }
+  def hasSubSeq[A](l:List[A], sub_l:List[A]):Boolean = {
+    (l, startsWith(l, sub_l)) match {
+      case (_,true) => true
+      case (Nil,_) => false
+      case (Cons(h,t),_)=> hasSubSeq(t,sub_l)
+    }
+  }
 
 }
