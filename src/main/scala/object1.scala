@@ -28,6 +28,6 @@ object object1 extends App{
 
   //  println(List.foldLeft(List(1,2,3,4), Nil:List[Int])((x,y)=> Cons(y,x)))
   //  println(List.foldRight(List(1,2,3,4), Nil)((x,y)=> 1+y))
-  println(List.hasSubSeq(List(1,2,3), List(2,3)))
+  println(List.hasSubSeq(List(1,2,3,4,5,6,7), List(2,3)))
 }
 
