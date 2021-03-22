@@ -4,10 +4,10 @@ import scala.::
 import scala.collection.immutable.List._
 
 trait Stream[+A] {
-  def headOption: Option[A] = this match {
-    case Empty => None
-    case Conss(h, t) => Some(h())
-  }
+//  def headOption: Option[A] = this match {
+//    case Empty => None
+//    case Conss(h, t) => Some(h())
+//  }
 
   def toList: List[A] = {
     @annotation.tailrec
@@ -39,12 +39,35 @@ trait Stream[+A] {
       case _ => Empty
     }
   }
-  def takeWhile(p: A => Boolean): Stream[A] = {
+//  def takeWhile(p: A => Boolean): Stream[A] = {
+//    this match {
+//      case Conss(h,t) if p(h())=> conss(h(), t().takeWhile(p))
+//      case _ => Stream.empty
+//    }
+//  }
+  def exists(p: A => Boolean): Boolean = {
     this match {
-      case Conss(h,t) if p(h())=> conss(h(), t().takeWhile(p))
-      case _ => Stream.empty
+      case Conss(h, t) => p(h()) || t().exists(p)
+      case _ => false
     }
   }
+  def foldRight[B](z: => B)(f: (A, => B) => B): B = {
+
+    this match {
+      case Conss(h,t) => f(h(), t().foldRight(z)(f))
+      case _ => z
+    }
+  }
+  def forAll(p: A => Boolean): Boolean={
+    this.foldRight(true)((el, acc)=> p(el) && acc)
+  }
+  def takeWhile(p: A => Boolean): Stream[A] = {
+    this.foldRight(Empty:Stream[A])((el, acc)=> if (!p(el)) Empty else conss(el,acc) )
+  }
+  def headOption: Option[A] ={
+    this.foldRight(None:Option[A])((el, acc) => Some(el))
+  }
+
 }
 case object Empty extends Stream[Nothing]
 case class Conss[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
