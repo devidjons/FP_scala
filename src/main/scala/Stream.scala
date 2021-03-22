@@ -1,3 +1,5 @@
+import Stream.conss
+
 import scala.::
 import scala.collection.immutable.List._
 
@@ -19,13 +21,30 @@ trait Stream[+A] {
 
     List.reverse(go(this, List()))
   }
-//  @annotation.tailrec
-//  def take(n:Int):Stream[A]={
-//    n match {
-//      case 0 => Empty
-//      case _=> conss(this.headOption, )
-//    }
-//  }
+  def take(n:Int):Stream[A]={
+    n match {
+      case 0 => Empty:Stream[A]
+      case _=> {
+        this match {
+          case Empty => Empty:Stream[A]
+          case Conss(h,t)=> conss(h(), t().take(n-1))
+        }
+      }
+    }
+  }
+  def drop(n:Int):Stream[A]={
+    this match {
+      case Conss(_,_) if n==0 => this
+      case Conss(_,t) if n>0 => t().drop(n-1)
+      case _ => Empty
+    }
+  }
+  def takeWhile(p: A => Boolean): Stream[A] = {
+    this match {
+      case Conss(h,t) if p(h())=> conss(h(), t().takeWhile(p))
+      case _ => Stream.empty
+    }
+  }
 }
 case object Empty extends Stream[Nothing]
 case class Conss[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
