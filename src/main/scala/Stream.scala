@@ -74,7 +74,7 @@ trait Stream[+A] {
     this.foldRight(Empty:Stream[A])((el,acc)=> if (f(el)) conss(el, acc) else acc)
   }
   def append[B>:A](s: => Stream[B]): Stream[B] =
-    foldRight(s)(conss)
+    foldRight(s)((el,acc)=>conss(el,acc))
 
   def flatMap[B](f: A => Stream[B]): Stream[B] ={
     foldRight(Stream.empty[B])((el,acc)=>f(el).append(acc))
