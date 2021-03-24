@@ -25,9 +25,11 @@ object object1 extends App{
       }
     }
   }
+  val ones: Stream[Int] = Stream.conss(1, ones)
+  println(ones.map(_ + 1).exists(_ % 2 == 0))
 
   //  println(List.foldLeft(List(1,2,3,4), Nil:List[Int])((x,y)=> Cons(y,x)))
   //  println(List.foldRight(List(1,2,3,4), Nil)((x,y)=> 1+y))
-  println(List.hasSubSeq(List(1,2,3,4,5,6,7), List(2,3)))
+//  println(List.hasSubSeq(List(1,2,3,4,5,6,7), List(2,3)))
 }
 
