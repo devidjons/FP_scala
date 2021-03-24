@@ -19,7 +19,7 @@ trait Stream[+A] {
 
     }
 
-    List.reverse(go(this, List()))
+    List.reverse(go(this, Nil))
   }
   def take(n:Int):Stream[A]={
     n match {
@@ -129,6 +129,17 @@ trait Stream[+A] {
         Some(r1)
       }
     }
+  }
+  def startsWith[A](s: Stream[A]): Boolean={
+    (this, s) match {
+      case (_, Empty)=> true
+      case (Conss(h1, t1), Conss(h2,t2))=> h1()==h2() && t1().startsWith(t2())
+    }
+  }
+  def tails: Stream[Stream[A]]={
+    unfold(this)({
+      case Conss(h,t)=> Some(Conss(h,t), t())
+      case Empty => None}).append(Stream(Stream.empty))
   }
 
 
