@@ -26,7 +26,7 @@ object object1 extends App{
     }
   }
   val ones: Stream[Int] = Stream.conss(1, ones)
-  val r1 =ones.take(3).tails.toList
+  val r1 =Stream(1,2,3,4,5,6).scanRight(0)(_ + _).toList
   println(r1)
 
   //  println(List.foldLeft(List(1,2,3,4), Nil:List[Int])((x,y)=> Cons(y,x)))

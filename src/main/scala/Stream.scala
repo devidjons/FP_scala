@@ -141,6 +141,16 @@ trait Stream[+A] {
       case Conss(h,t)=> Some(Conss(h,t), t())
       case Empty => None}).append(Stream(Stream.empty))
   }
+  def scanRight[B](z:B)(f:(A,B)=>B):  Conss[B]={
+    println("calculation")
+    this match {
+      case Empty => Conss(()=>z, ()=>Empty:Stream[B])
+      case Conss(h,t)=> {
+        lazy val res = t().scanRight(z)(f)
+        Conss(() => f(h(), res.h()),  ()=> res)
+      }
+    }
+  }
 
 
 }
