@@ -27,6 +27,8 @@ object State {
     val r1:State[S,List[A]] = State.unit(List[A]())
     List.foldLeft(fs, r1)(map2(_,_)((x,y)=>Cons(y,x)))
   }
+  def get[S]: State[S, S] = s => (s, s)
+
 }
 
 case class SimpleRNG(seed: Long) extends   RNG

@@ -34,3 +34,7 @@ object object1 extends App{
 //  println(List.hasSubSeq(List(1,2,3,4,5,6,7), List(2,3)))
 }
 
+object test1 extends App{
+  println(Machine.simulateMachine(List(Coin, Turn, Coin, Turn, Turn))(Machine(true, 5, 5))._2)
+}
+
