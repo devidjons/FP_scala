@@ -33,10 +33,10 @@ object Option {
   def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C]={
     a.flatMap(x=> b.map(y=>f(x,y)))
   }
-  def sequence[A](a: List[Option[A]]): Option[List[A]]={
-    List.foldLeft(a,Some(Nil):Option[List[A]])((acc, el)=>map2(acc,el)(List.appendLeft))
+  def sequence[A](a: MyList[Option[A]]): Option[MyList[A]]={
+    MyList.foldLeft(a,Some(Nil):Option[MyList[A]])((acc, el)=>map2(acc,el)(MyList.appendLeft))
   }
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]]={
+  def traverse[A, B](a: MyList[A])(f: A => Option[B]): Option[MyList[B]]={
     a match {
       case Nil => Some(Nil)
       case Cons(h,t)=> map2(f(h), traverse(t)(f))(Cons(_,_))

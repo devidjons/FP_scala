@@ -20,9 +20,9 @@ object Machine{
     m=> ((m.candies, m.coins),m)
   }
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)]={
-      List.foldLeft(inputs, init())((acc,el)=>flatMap(acc)(x=> getInput(el)))
+      inputs.foldLeft(init())((acc, el)=>flatMap(acc)(x=> getInput(el)))
   }
   def simulateMachineSeq(inputs: List[Input]): State[Machine, (Int, Int)]={
-    flatMap(flatMap(sequence(List.map(inputs)(getInput)))(x=> get[Machine]))(x=> init())
+    flatMap(flatMap(sequence(inputs.map(getInput)))(x=> get[Machine]))(x=> init())
   }
 }

@@ -25,13 +25,13 @@ object State {
   }
   def sequence[S,A](fs: List[State[S,A]]): State[S,List[A]]={
     val r1:State[S,List[A]] = State.unit(List[A]())
-    List.foldLeft(fs, r1)(map2(_,_)((x,y)=>Cons(y,x)))
+    fs.foldLeft(r1)(map2(_,_)((x, y)=>y::x))
   }
   def get[S]: State[S, S] = s => (s, s)
 
 }
 
-case class SimpleRNG(seed: Long) extends   RNG
+case class SimpleRNG(seed: Long) extends  RNG
 {
   def nextInt: (Int, RNG) = {
     val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL
@@ -40,8 +40,9 @@ case class SimpleRNG(seed: Long) extends   RNG
     (n, nextRNG)
   }
 
-
 }
+
+
 object Rand {
   type Rand[+A] = RNG => (A, RNG)
 
@@ -77,8 +78,8 @@ object Rand {
     val (i3, rng4) = double(rng3)
     ((i1,i2,i3), rng4)
   }
-  def ints(count: Int)(rng: RNG): (List[Int], RNG)={
-    def go(count:Int, acc:(List[Int], RNG)):(List[Int], RNG) = {
+  def ints(count: Int)(rng: RNG): (MyList[Int], RNG)={
+    def go(count:Int, acc:(MyList[Int], RNG)):(MyList[Int], RNG) = {
       count match {
         case 0 => acc
         case n => {
@@ -114,8 +115,8 @@ object Rand {
   def both[A,B](ra: Rand[A], rb: Rand[B]): Rand[(A,B)] =
     map2(ra, rb)((_, _))
 
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]]={
-    List.foldLeft(fs, unit(List[A]()))(map2(_,_)((x,y)=> Cons(y,x)))
+  def sequence[A](fs: MyList[Rand[A]]): Rand[MyList[A]]={
+    MyList.foldLeft(fs, unit(MyList[A]()))(map2(_,_)((x, y)=> Cons(y,x)))
   }
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B]={
     rng=>{
