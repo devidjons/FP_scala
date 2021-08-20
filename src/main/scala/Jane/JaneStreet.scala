@@ -2,9 +2,17 @@ package Jane
 
 import scala.annotation.tailrec
 import scala.math
+import StringParser._
+import MultipleSolutions._
 
 object JaneStreet extends App {
+    val fileName = "src/main/scala/Jane/bestOfSamples.txt"
+    val strategies = parseFile(fileName)(str2ListInt(_, " ")).map(Strategy).distinct.take(1000)
 
+    strategies.take(15).foreach(println)
+    println("best solutions are")
+    val generatedStrategies = generateBestStrategy(strategies)
+    generatedStrategies.solutionsList.take(5).foreach(println)
 }
 
 final case class Solution(values: List[Int]) {
@@ -41,13 +49,22 @@ case class MultipleSolutions(solutionsList: List[Solution]) {
         } yield a1 & a2
     }
 
-    def dropWeak(): MultipleSolutions = MultipleSolutions {
-        solutionsList.foldLeft(List.empty[Solution])((acc, el) => el.insertIntoList(acc))
+    def map(f:List[Solution]=> List[Solution]):MultipleSolutions = MultipleSolutions{
+        f(solutionsList)
     }
+
+    def dropWeak(): MultipleSolutions =
+        map(_.foldLeft(List.empty[Solution])((acc, el) => el.insertIntoList(acc)))
+
+    def takeBest(n:Int):MultipleSolutions =
+        map(_.sortBy(_.minimalPoints).take(n))
+
+    def dropInvalid():MultipleSolutions =
+        map(_.filter(_.minimalPoints<=100))
 
     def getMinSolution: Solution = solutionsList.minBy(_.minimalPoints)
 
-    def isValid: Boolean = getMinSolution.minimalPoints <= 100
+    def isEmpty:Boolean = solutionsList.isEmpty
 
 }
 
@@ -55,7 +72,7 @@ case class MultipleSolutions(solutionsList: List[Solution]) {
 object MultipleSolutions {
 
     def generateSolutionsForStrategy(strategy: Strategy): MultipleSolutions = MultipleSolutions {
-        import WinningCombinations.minimalWinningComparisons
+        import WinningCombinations._
         for {
             comparison <- minimalWinningComparisons
         } yield Solution {
@@ -73,10 +90,14 @@ object MultipleSolutions {
 
 
     def generateBestStrategy(strategiesList: List[Strategy]): MultipleSolutions = {
-        strategiesList.map(generateSolutionsForStrategy).reduce((acc, el) => {
-            val joined = (acc & el).dropWeak()
-            if (joined.isValid) joined else acc
-        })
+        val separatedSolutions = strategiesList.map(generateSolutionsForStrategy)
+        println("separatedSolutions finished")
+        val n = separatedSolutions.length
+        separatedSolutions.zipWithIndex.reduce((acc, el) => {
+            println(s"${acc._2} $n ${acc._1.solutionsList.length}")
+            val joined = (acc._1 & el._1).dropInvalid().dropWeak().takeBest(3000)
+            if (!joined.isEmpty) {println("no available strategies was applied");(joined, acc._2+1)} else (acc._1, acc._2+1)
+        })._1
     }
 }
 
@@ -85,7 +106,7 @@ case class Strategy(points: List[Int]) {
 }
 
 
-object WinningCombinations extends App {
+object WinningCombinations{
     def isWinner(comparisons: List[Int]): Boolean = {
         require(comparisons.size == 10)
         if (winBy3(comparisons) != 0) winBy3(comparisons) == 1 else winByPoints(comparisons) == 1
@@ -111,6 +132,8 @@ object WinningCombinations extends App {
     })
     val winningComparisons = allPossibleComparisons.filter(isWinner)
     val minimalWinningComparisons = MultipleSolutions(winningComparisons.map(Solution(_))).dropWeak().solutionsList.map(_.values)
+//    println(minimalWinningComparisons)
 
 }
+
 
