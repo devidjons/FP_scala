@@ -95,7 +95,7 @@ object MultipleSolutions {
         val n = separatedSolutions.length
         separatedSolutions.zipWithIndex.reduce((acc, el) => {
             println(s"${acc._2} $n ${acc._1.solutionsList.length}")
-            val joined = (acc._1 & el._1).dropInvalid().dropWeak()
+            val joined = (acc._1 & el._1).dropInvalid().dropWeak().takeBest(15000)
             if (!joined.isEmpty) (joined, acc._2+1) else {println("empty joined");(acc._1, acc._2+1)}
         })._1
     }
