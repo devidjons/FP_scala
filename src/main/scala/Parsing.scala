@@ -8,7 +8,7 @@ object Parsing {
 
     trait Parsers[ParseError, Parser[+_]] { self =>
         def char(c: Char): Parser[Char] =
-            map(string(c.toString))(_.charAt(0))
+            string(c.toString).map(_.charAt(0))
         def number:Parser[List[Int]] = "0-9".r.map(_.toInt).many
         def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
         implicit def string(s: String): Parser[String]
@@ -45,25 +45,16 @@ object Parsing {
 
         def map2[A,B,C](p: Parser[A], p2: =>Parser[B])(f: (A,B) => C): Parser[C] = p**p2 map f.tupled
 
-        def jsonParser[Err,Parser[+_]](P: Parsers[Err,Parser]): Parser[JSON] = {
-//            import P._
-            import JSON._
-            val spaces = char(' ').many
-            val digits = "[0-9]".r.map(_.toInt).many1
-            val integerParser = digits.map(_.foldLeft(0)(10*_+_))
-            val doubleParser = (integerParser ** "." ** digits.map(x=> x.zipWithIndex.map(el => el._1 * math.pow(0.1, el._2 + 1)).sum)).map(x=> x._1._1 + x._2)
-            val standardSymbols = regex("(\\w|\\s)+".r)
-            val key = ("\"" **  standardSymbols ** "\"").map(_._1._2)
-            val JNullParse = spaces.flatMap(_=> succeed(JNull))
-            val JNumberParser = (doubleParser | integerParser.map(_.toDouble)).map(x=>JNumber(x))
-            val JStringParser = key.map(JString(_))
-            val JBoolParser = or(string("true").map(_ => true), string("false").map(_=> false))
-            val JSONParser:Parser[JSON] = ???
-            val JArrayParser = ???
+
+
+
+
+
+//            val JArrayParser = ???
             ???
 
             //        val keyValueItem =
-        }
+
 
 
 
@@ -80,6 +71,35 @@ object Parsing {
         case class JBool(get: Boolean) extends JSON
         case class JArray(get: IndexedSeq[JSON]) extends JSON
         case class JObject(get: Map[String, JSON]) extends JSON
+        def jsonParser[Err,Parser[+_]](P: Parsers[Err,Parser]): Parser[JSON] = {
+            import P._
+            val spaces = char(' ').many.slice
+
+
+            def listWithSeparator[T](p: Parser[T], sep: String): Parser[List[T]] = {
+                val repetetiveItems = product(string(sep), p).many.map(x => x.map(_._2))
+                val nonEmptyList = (p ** repetetiveItems).map(x => x._1 :: x._2)
+                nonEmptyList | succeed(List.empty[T])
+            }
+
+            val digits = "[0-9]".r.map(_.toInt).many1
+            val integerParser = digits.map(_.foldLeft(0)(10 * _ + _))
+            val doubleParser = (integerParser ** "." ** digits.map(x => x.zipWithIndex.map(el => el._1 * math.pow(0.1, el._2 + 1)).sum)).map(x => x._1._1 + x._2)
+            val standardSymbols = regex("(\\w|\\s)+".r)
+            val key = ("\"" ** standardSymbols ** "\"").map(_._1._2)
+            def JSONItem: Parser[(String, JSON)] = (key ** ":" ** spaces ** orderedJSONMap(x => x) ** "," ** spaces).map(x => (x._1._1._1._1._1, x._1._1._2))
+            def JNullParse: Parser[JSON.JNull.type] = spaces.flatMap(_ => succeed(JNull))
+            def JNumberParser: Parser[JNumber] = (doubleParser | integerParser.map(_.toDouble)).map(x => JNumber(x))
+            def JStringParser: Parser[JString] = key.map(JString)
+            def JBoolParser: Parser[JBool] = or(string("true").map(_ => true), string("false").map(_ => false)).map(JBool)
+            def JArrayParser: Parser[JArray] = ("[ " ** orderedJSONMap(listWithSeparator(_, ", ")) ** " ]").map(_._1._2.toIndexedSeq).map(JArray)
+            def JSONObjectParser: Parser[JObject] = ("{" ** spaces ** JSONItem.many ** "}").map(x => x._1._2).map(_.toMap).map(JObject)
+            def orderedJSONMap[A](f: Parser[JSON] => Parser[A]): Parser[A] = {
+                val parsersUnited:List[Parser[JSON]] = List(JSONObjectParser, JArrayParser, JBoolParser, JNumberParser, JStringParser, JNullParse)
+                parsersUnited.map(f).reduce((x, y) => x | y)
+            }
+            JSONObjectParser
+        }
     }
 
 
