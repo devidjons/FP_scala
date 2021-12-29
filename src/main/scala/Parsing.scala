@@ -4,14 +4,30 @@ import Parsing._
 import scala.util.matching.Regex
 
 object Parsing {
+    case class Location(input: String, offset: Int = 0) {
+        lazy val line = input.slice(0,offset+1).count(_ == '\n') + 1
+        lazy val col = input.slice(0,offset+1).lastIndexOf('\n') match {
+            case -1 => offset + 1
+            case lineStart => offset - lineStart
+        }
+    }
+    def errorLocation(e: ParseError): Location = ???
+    def errorMessage(e: ParseError): String = ???
+
+    case class ParseError(stack: List[(Location,String)])
 
 
-    trait Parsers[ParseError, Parser[+_]] { self =>
+
+    trait Parsers[Parser[+_]] { self =>
+        def run[A](p: Parser[A])(input: String): Either[ParseError,A]
+
         def char(c: Char): Parser[Char] =
             string(c.toString).map(_.charAt(0))
         def number:Parser[List[Int]] = "0-9".r.map(_.toInt).many
         def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
-        implicit def string(s: String): Parser[String]
+        implicit def string(s: String): Parser[String] = {
+            ???
+        }
         implicit def regex(r:Regex):Parser[String]
 //        implicit def operators[A](p: Parser[A]): ParserOps[A] = ParserOps[A](p)
         implicit def asStringParser[A](a: A)(implicit f: A => Parser[String]):ParserOps[String] = ParserOps(f(a))
@@ -71,7 +87,7 @@ object Parsing {
         case class JBool(get: Boolean) extends JSON
         case class JArray(get: IndexedSeq[JSON]) extends JSON
         case class JObject(get: Map[String, JSON]) extends JSON
-        def jsonParser[Err,Parser[+_]](P: Parsers[Err,Parser]): Parser[JSON] = {
+        def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] = {
             import P._
             val spaces = char(' ').many.slice
 
