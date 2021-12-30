@@ -4,7 +4,6 @@ import Parsing._
 import scala.util.matching.Regex
 
 object Parsing {
-    type Parser[+T] = Function1[String,(Option[(T, String)], ParseError)]
     case class Location(input: String, offset: Int = 0) {
         lazy val line = input.slice(0,offset+1).count(_ == '\n') + 1
         lazy val col = input.slice(0,offset+1).lastIndexOf('\n') match {
@@ -12,34 +11,22 @@ object Parsing {
             case lineStart => offset - lineStart
         }
     }
-    def errorLocation(e: ParseError): Location = e.stack.head._1
-    def errorMessage(e: ParseError): String = e.stack.map(_._2).reduce(_ + " "+ _)
+    def errorLocation(e: ParseError): Location = ???
+    def errorMessage(e: ParseError): String = ???
 
     case class ParseError(stack: List[(Location,String)])
 
 
 
-    trait Parsers { self =>
-        def run[A](p: Parser[A])(input: String): Either[ParseError,A] = {
-            val parseResult1 = p(input)
-            val (parseResult, error) = parseResult1
-            parseResult match {
-                case Some((a, "")) => Right(a)
-                case _ => Left(error)
-            }
-        }
+    trait Parsers[Parser[+_]] { self =>
+        def run[A](p: Parser[A])(input: String): Either[ParseError,A]
 
         def char(c: Char): Parser[Char] =
             string(c.toString).map(_.charAt(0))
         def number:Parser[List[Int]] = "0-9".r.map(_.toInt).many
         def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
         implicit def string(s: String): Parser[String] = {
-            (x:String) => {
-                val error = ParseError(List((Location(x,0), "")))
-                val evaluation = if (x.startsWith(s)) Some((s, x.drop(s.length))) else None
-                (evaluation, error)
-
-            }
+            ???
         }
         implicit def regex(r:Regex):Parser[String]
 //        implicit def operators[A](p: Parser[A]): ParserOps[A] = ParserOps[A](p)
@@ -65,12 +52,7 @@ object Parsing {
 
         def map[A,B](p: Parser[A])(f: A => B): Parser[B] = p.flatMap(a=>succeed(f(a)))
 
-        def flatMap[A,B](p: Parser[A])(f: A => Parser[B]): Parser[B] = {
-            x:String=>{
-                val (firstEvaluation, firstError) = p(x)
-                ???
-            }
-        }
+        def flatMap[A,B](p: Parser[A])(f: A => Parser[B]): Parser[B]
 
         def succeed[A](a: A): Parser[A] =
             map(string(""))(_ => a)
@@ -105,7 +87,7 @@ object Parsing {
         case class JBool(get: Boolean) extends JSON
         case class JArray(get: IndexedSeq[JSON]) extends JSON
         case class JObject(get: Map[String, JSON]) extends JSON
-        def jsonParser(P: Parsers): Parser[JSON] = {
+        def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] = {
             import P._
             val spaces = char(' ').many.slice
 
