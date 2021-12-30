@@ -51,7 +51,7 @@ trait MyStream[+A] {
       case _ => false
     }
   }
-  def find(p:A=> Boolean):Option[A] = {
+  def find(p:A=> Boolean):MyOption[A] = {
     this.filter(p) match {
       case Empty => None
       case Conss(h,t) => Some(h())
@@ -70,8 +70,8 @@ trait MyStream[+A] {
   def takeWhile(p: A => Boolean): MyStream[A] = {
     this.foldRight(Empty:MyStream[A])((el, acc)=> if (!p(el)) Empty else conss(el,acc) )
   }
-  def headOption: Option[A] ={
-    this.foldRight(None:Option[A])((el, acc) => Some(el))
+  def headOption: MyOption[A] ={
+    this.foldRight(None:MyOption[A])((el, acc) => Some(el))
   }
   def map[B](f:A=>B):MyStream[B] = {
     this.foldRight(Empty:MyStream[B])((el, acc)=> conss(f(el),acc))
@@ -110,19 +110,19 @@ trait MyStream[+A] {
       case _ => None
     }
   }
-  def zipAll[B](s2: MyStream[B]): MyStream[(Option[A],Option[B])]={
+  def zipAll[B](s2: MyStream[B]): MyStream[(MyOption[A],MyOption[B])]={
     unfold((this, s2)){
       case (Empty, Empty)=> None
       case (Empty, Conss(h,t))=> {
         val r1 =(
-          (None:Option[A], Some(h())),
+          (None:MyOption[A], Some(h())),
           (MyStream.empty[A], t())
         )
         Some(r1)
       }
       case (Conss(h,t), Empty) => {
         val r1 =(
-          (Some(h()),None:Option[B]),
+          (Some(h()),None:MyOption[B]),
           (t(),MyStream.empty[B])
         )
         Some(r1)
@@ -180,7 +180,7 @@ object MyStream {
   def fibs(a0: Int=0, a1:Int=1):MyStream[Int]={
     conss(a0, fibs(a1, a1+a0))
   }
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): MyStream[A]={
+  def unfold[A, S](z: S)(f: S => MyOption[(A, S)]): MyStream[A]={
       f(z) match {
         case None => Empty
         case Some(x)=> conss(x._1,unfold(x._2)(f))
