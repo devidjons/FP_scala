@@ -128,7 +128,7 @@ object Par {
 
 }
 
-object test extends App{
+object test123 extends App{
     val r1 = {
         a:Int => a+1
         2

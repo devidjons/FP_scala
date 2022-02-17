@@ -154,7 +154,7 @@ object testing {
 
 }
 
-object test123 extends App {
+object testMonoid extends App {
     val smallInt = Gen.choose(-10,10)
     val maxProp = forAll(SGen.listOf1(smallInt)) { ns =>
         val max = ns.max
