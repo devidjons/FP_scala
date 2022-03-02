@@ -18,6 +18,15 @@ trait Monad[F[_]] extends Functor[F]{
     def map2[A,B,C](ma: F[A], mb: F[B])(f: (A, B) => C): F[C] =
         flatMap(ma)(a => map(mb)(b => f(a, b)))
 
+    def sequence[A](lma: List[F[A]]): F[List[A]] = lma.foldLeft(unit(List.empty[A]))((acc,el)=>map2(el, acc)(_::_))
+    def traverse[A,B](la: List[A])(f: A => F[B]): F[List[B]] = sequence(la.map(f))
+    def replicateM[A](n: Int, ma: F[A]): F[List[A]] = sequence(List.fill(n)(ma))
+    def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] = {
+        val r1 = ms.map(x => map2(unit(x), f(x))((_,_)))
+        map(sequence(r1))(_.filter(_._2).map(_._1))
+    }
+
+
 }
 
 object Monad {
@@ -47,10 +56,6 @@ object Monad {
         override def unit[A](a: => A): List[A] = List(a)
         override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma flatMap f
     }
-//    class monad[T][Q] extends Monad[State[T,Q]] {
-//        override def unit[A](a: => A): State[T,A] = State.unit[T,A](a)
-//
-//        override def flatMap[A, B](ma: State[T,A])(f: A => State[T,B]): State[T,B] = ???
-//    }
+
 }
 
