@@ -25,6 +25,23 @@ trait Monad[F[_]] extends Functor[F]{
         val r1 = ms.map(x => map2(unit(x), f(x))((_,_)))
         map(sequence(r1))(_.filter(_._2).map(_._1))
     }
+    def compose[A,B,C](f: A => F[B], g: B => F[C]): A => F[C] = {
+        x:A => flatMap(f(x))(g)
+    }
+    def flatMap2[A,B](ma: F[A])(f: A => F[B]): F[B] = {
+        compose((_:Unit) => ma, f)(())
+    }
+    def join[A](mma: F[F[A]]): F[A] = {
+        flatMap(mma)(x=>x)
+    }
+    def compose2[A,B,C](f: A => F[B], g: B => F[C]): A => F[C] = {
+        a:A => {
+            val r1 = map(join(map(unit(a))(f)))(g)
+            join(r1)
+        }
+
+    }
+
 
 
 }
