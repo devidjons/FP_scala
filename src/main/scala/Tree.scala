@@ -1,4 +1,8 @@
-sealed trait Tree[+A]
+sealed trait Tree[+A] { self =>
+  def map[B](f:A=>B):Tree[B] = {
+    Tree.map(self)(f)
+  }
+}
 case class Leaf[A](value: A) extends Tree[A]
 case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 object Tree {

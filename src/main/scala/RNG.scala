@@ -1,33 +1,40 @@
 
+
 trait RNG {
   def nextInt: (Int, RNG)
 }
 
 
+case class State[S,+A](run:S => (A,S)){
+  import State.{unit, map2}
+  def flatMap[B](f:A=>State[S,B]):State[S,B]= {
+    val newRun = (s:S)=>{
+      val (a,s1) = run(s)
+      f(a).run(s1)
+    }
+    State(newRun)
+  }
 
+  def map[B](f:A => B):State[S,B]=
+    flatMap(x=>unit(f(x)))
+
+  def apply(x:S):(A,S) = run(x)
+}
 
 object State {
-  type State[S,+A] = S => (A,S)
-//  unit, map, map2, flatMap, and sequence
+  def map[S,A,B](st:State[S,A])(f:A=>B):State[S,B] = st.map(f)
+  def flatMap[S,A,B](st:State[S,A])(f:A=>State[S,B]):State[S,B] = st.flatMap(f)
   def unit[S,A](a:A):State[S,A]=
-    s=>(a,s)
-  def flatMap[S,A,B](st:State[S,A])(f:A=>State[S,B]):State[S,B]=
-   s=>{
-     val (a,s1) = st(s)
-     f(a)(s1)
-   }
-
-  def map[S,A,B](st:State[S,A])(f:A => B):State[S,B]=
-    flatMap(st)(x=>unit(f(x)))
-
+    State(s=>(a,s))
   def map2[S,A,B,C](st1:State[S,A], st2:State[S,B])(f:(A,B)=>C):State[S,C]={
-    flatMap(st1)(a=> map(st2)(b=>f(a,b)))
+    st1.flatMap(a=> st2.map(b=>f(a,b)))
   }
   def sequence[S,A](fs: List[State[S,A]]): State[S,List[A]]={
     val r1:State[S,List[A]] = State.unit(List[A]())
     fs.foldLeft(r1)(map2(_,_)((x, y)=>y::x))
   }
-  def get[S]: State[S, S] = s => (s, s)
+  def get[S]: State[S, S] = State(s => (s, s))
+  def set[S](s1:S): State[S,Unit] = State(s=>({}, s1))
 
 }
 

@@ -1,5 +1,5 @@
+import Applicative.Applicative
 import Par.Par
-import State.State
 import testing._
 
 trait Functor[F[_]] {
@@ -10,17 +10,13 @@ trait Functor[F[_]] {
 }
 
 
-trait Monad[F[_]] extends Functor[F]{
+trait Monad[F[_]] extends Functor[F] with Applicative[F]{
     def unit[A](a: => A): F[A]
     def flatMap[A,B](ma: F[A])(f: A => F[B]): F[B]
-    def map[A,B](ma: F[A])(f: A => B): F[B] =
-            flatMap(ma)(a => unit(f(a)))
+    override def map[A,B](ma:F[A])(f:A=>B):F[B] = flatMap(ma)(x=>unit(f(x)))
     def map2[A,B,C](ma: F[A], mb: F[B])(f: (A, B) => C): F[C] =
         flatMap(ma)(a => map(mb)(b => f(a, b)))
 
-    def sequence[A](lma: List[F[A]]): F[List[A]] = lma.foldLeft(unit(List.empty[A]))((acc,el)=>map2(el, acc)(_::_))
-    def traverse[A,B](la: List[A])(f: A => F[B]): F[List[B]] = sequence(la.map(f))
-    def replicateM[A](n: Int, ma: F[A]): F[List[A]] = sequence(List.fill(n)(ma))
     def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] = {
         val r1 = ms.map(x => map2(unit(x), f(x))((_,_)))
         map(sequence(r1))(_.filter(_._2).map(_._1))
@@ -73,6 +69,11 @@ object Monad {
         override def unit[A](a: => A): List[A] = List(a)
         override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma flatMap f
     }
+    def stateMonad[S]= new Monad[({type f[x] = State[S,x]})#f] {
+        def unit[A](a: => A): State[S,A] = State.unit(a)
+        def flatMap[A,B](st: State[S,A])(f: A => State[S,B]): State[S,B] = st.flatMap(f)
+    }
+
 
 }
 

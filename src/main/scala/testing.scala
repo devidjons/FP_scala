@@ -1,4 +1,4 @@
-import State.State
+
 import testing.Gen.forAll
 import testing._
 
@@ -9,7 +9,7 @@ object testing {
 
     case class Gen[+A](sample: State[RNG,A]){
         def flatMap[B](f: A => Gen[B]): Gen[B]={
-            val r1 = (rng:RNG) => f(sample(rng)._1).sample(rng)
+            val r1 = State((rng:RNG) => f(sample.run(rng)._1).sample.run(rng))
             Gen(r1)
         }
         def map[B](f:A=>B):Gen[B] = this.flatMap(x=> Gen.unit(f(x)))
@@ -21,13 +21,13 @@ object testing {
     }
     object Gen{
         def choose(start:Int, endExclusive:Int):Gen[Int]={
-            Gen(State.map(Rand.nonNegativeInt)(x=>x%(endExclusive-start) + start))
+            Gen(State(Rand.nonNegativeInt).map(x=>x % (endExclusive-start) + start))
         }
         def unit[A](a: => A): Gen[A] = {
             Gen(State.unit(a))
         }
         def boolean:Gen[Boolean]={
-            val st1:State[RNG, Int] = (rng:RNG)=> rng.nextInt
+            val st1:State[RNG, Int] = State((rng:RNG)=> rng.nextInt)
             Gen(State.map(st1)(_%2 == 0))
         }
         def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]]={
